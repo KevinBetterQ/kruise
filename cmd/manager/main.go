@@ -69,6 +69,11 @@ func main() {
 		managerOptions.LeaderElectionID = "kruise-manager"
 		managerOptions.LeaderElectionNamespace = leaderElectionNamespace
 	}
+
+	// ----------- 以上：获取配置    ----------------------------
+	// ----------- 以下：实例化初始化 manager --------------------
+
+	// 创建一个 manager 实例
 	mgr, err := manager.New(cfg, managerOptions)
 	if err != nil {
 		log.Error(err, "unable to set up overall controller manager")
@@ -77,13 +82,15 @@ func main() {
 
 	log.Info("Registering Components.")
 
-	// Setup Scheme for all resources
+	// Setup Scheme for all resources。
+	// apis包含kubernetes的API
 	log.Info("setting up scheme")
 	if err := apis.AddToScheme(mgr.GetScheme()); err != nil {
 		log.Error(err, "unable add APIs to scheme")
 		os.Exit(1)
 	}
 
+	// 利用 manager 的 config 创建 clientset
 	// Create clientset by client-go
 	err = extclient.NewRegistry(mgr)
 	if err != nil {
@@ -91,19 +98,22 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Setup all Controllers
+	// 利用 manager 设置所有的 controller
 	log.Info("Setting up controller")
 	if err := controller.AddToManager(mgr); err != nil {
 		log.Error(err, "unable to register controllers to the manager")
 		os.Exit(1)
 	}
 
+	// 给 manager 设置 webhook
+	// webhook 在数据产生时立刻发送数据
 	log.Info("setting up webhooks")
 	if err := webhook.AddToManager(mgr); err != nil {
 		log.Error(err, "unable to register webhooks to the manager")
 		os.Exit(1)
 	}
 
+	// start 这个 manager
 	// Start the Cmd
 	log.Info("Starting the Cmd.")
 	if err := mgr.Start(signals.SetupSignalHandler()); err != nil {

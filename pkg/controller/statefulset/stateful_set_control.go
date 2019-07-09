@@ -50,7 +50,7 @@ type StatefulSetControlInterface interface {
 
 // NewDefaultStatefulSetControl returns a new instance of the default implementation StatefulSetControlInterface that
 // implements the documented semantics for StatefulSets. podControl is the PodControlInterface used to create, update,
-// and delete Pods and to create PersistentVolumeClaims. statusUpdater is the StatefulSetStatusUpdaterInterface used
+//// and delete Pods and to create PersistentVolumeClaims. statusUpdater is the StatefulSetStatusUpdaterInterface used
 // to update the status of StatefulSets. You should use an instance returned from NewRealStatefulPodControl() for any
 // scenario other than testing.
 func NewDefaultStatefulSetControl(
@@ -61,9 +61,13 @@ func NewDefaultStatefulSetControl(
 	return &defaultStatefulSetControl{podControl, statusUpdater, controllerHistory, recorder}
 }
 
+// 控制更新 StatefulSet 及其 pod
 type defaultStatefulSetControl struct {
+	// podControl create, update, and delete Pods and to create PersistentVolumeClaims
 	podControl        StatefulPodControlInterface
+	// statusUpdater update the status of StatefulSets.
 	statusUpdater     StatefulSetStatusUpdaterInterface
+
 	controllerHistory history.Interface
 	recorder          record.EventRecorder
 }
@@ -74,6 +78,8 @@ type defaultStatefulSetControl struct {
 // strategy allows these constraints to be relaxed - pods will be created and deleted eagerly and
 // in no particular order. Clients using the burst strategy should be careful to ensure they
 // understand the consistency implications of having unpredictable numbers of pods available.
+
+// === 核心是执行 updateStatefulSet 和 updateStatefulSetStatus ===
 func (ssc *defaultStatefulSetControl) UpdateStatefulSet(set *appsv1alpha1.StatefulSet, pods []*v1.Pod) error {
 
 	// list all revisions and sort them
@@ -279,6 +285,8 @@ func (ssc *defaultStatefulSetControl) updateStatefulSet(
 	*status.CollisionCount = collisionCount
 
 	replicaCount := int(*set.Spec.Replicas)
+
+	// ======== 为了扩缩容使用，将所有副本划分为 replicas 和 condemned 2部分
 	// slice that will contain all Pods such that 0 <= getOrdinal(pod) < set.Spec.Replicas
 	replicas := make([]*v1.Pod, replicaCount)
 	// slice that will contain all Pods such that set.Spec.Replicas <= getOrdinal(pod)
@@ -288,6 +296,7 @@ func (ssc *defaultStatefulSetControl) updateStatefulSet(
 	var firstUnhealthyPod *v1.Pod
 
 	// First we partition pods into two lists valid replicas and condemned Pods
+	// 遍历所有pod，统计各类型数量，划分replicas和condemned
 	for i := range pods {
 		status.Replicas++
 
@@ -296,6 +305,7 @@ func (ssc *defaultStatefulSetControl) updateStatefulSet(
 			status.ReadyReplicas++
 		}
 
+		// ====== 将所有pod划分为 replicas 和 condemned 2个slice。
 		// count the number of current and update replicas
 		if isCreated(pods[i]) && !isTerminating(pods[i]) {
 			if getPodRevision(pods[i]) == currentRevision.Name {
@@ -312,13 +322,15 @@ func (ssc *defaultStatefulSetControl) updateStatefulSet(
 			replicas[ord] = pods[i]
 
 		} else if ord >= replicaCount {
-			// if the ordinal is greater than the number of replicas add it to the condemned list
+			// pod索引号大于最新的Spec.Replicas,说明Replicas减小了，这些Pod需要被缩容掉
 			condemned = append(condemned, pods[i])
 		}
+		// ======
 		// If the ordinal could not be parsed (ord < 0), ignore the Pod.
 	}
 
 	// for any empty indices in the sequence [0,set.Spec.Replicas) create a new Pod at the correct revision
+	// 对于空的pod，直接创建新pod
 	for ord := 0; ord < replicaCount; ord++ {
 		if replicas[ord] == nil {
 			replicas[ord] = newVersionedStatefulSetPod(
@@ -332,7 +344,7 @@ func (ssc *defaultStatefulSetControl) updateStatefulSet(
 	// sort the condemned Pods by their ordinals
 	sort.Sort(ascendingOrdinal(condemned))
 
-	// find the first unhealthy Pod
+	// ====== find the first unhealthy Pod ======
 	for i := range replicas {
 		if !isHealthy(replicas[i]) {
 			unhealthy++
@@ -360,18 +372,22 @@ func (ssc *defaultStatefulSetControl) updateStatefulSet(
 			unhealthy,
 			firstUnhealthyPod.Name)
 	}
+	// ====== end: find the first unhealthy Pod ======
 
-	// If the StatefulSet is being deleted, don't do anything other than updating
-	// status.
+	// If the StatefulSet is being deleted, don't do anything other than updating status.
 	if set.DeletionTimestamp != nil {
 		return &status, nil
 	}
 
+	// =========================== StatefulSet Pod创建相关 ==============================================
+	// 获取创建模式, monotonic=true:顺序创建, false:并发创建
 	monotonic := !allowsBurst(set)
 
 	// Examine each replica with respect to its ordinal
+	// 按0~replicas-1遍历每个索引号,保证前序Pod创建成功后再创建后续Pod
 	for i := range replicas {
 		// delete and recreate failed pods
+		// 索引位置Pod存在但是为fai1ed状态，则重建该Pod,并更新StatefulSet.Status
 		if isFailed(replicas[i]) {
 			ssc.recorder.Eventf(set, v1.EventTypeWarning, "RecreatingFailedPod",
 				"StatefulSet %s/%s is recreating failed Pod %s",
@@ -396,6 +412,7 @@ func (ssc *defaultStatefulSetControl) updateStatefulSet(
 				i)
 		}
 		// If we find a Pod that has not been created we create the Pod
+		// 索引位置的pod还没有创建,那么就创建它,并更新StatefulSet.Status
 		if !isCreated(replicas[i]) {
 			if err := ssc.podControl.CreateStatefulPod(set, replicas[i]); err != nil {
 				return &status, err
@@ -409,14 +426,14 @@ func (ssc *defaultStatefulSetControl) updateStatefulSet(
 			}
 
 			// if the set does not allow bursting, return immediately
+			// 顺序创建模式时，后续索引位置Pod需要等该Pod运行正常后才能创建
 			if monotonic {
 				return &status, nil
 			}
 			// pod created, no more work possible for this round
 			continue
 		}
-		// If we find a Pod that is currently terminating, we must wait until graceful deletion
-		// completes before we continue to make progress.
+		// 索引位置pod为删除状态且为顺序创建模式,那就等该pod删除后再创建后续Pod
 		if isTerminating(replicas[i]) && monotonic {
 			klog.V(4).Infof(
 				"StatefulSet %s/%s is waiting for Pod %s to Terminate",
@@ -425,6 +442,7 @@ func (ssc *defaultStatefulSetControl) updateStatefulSet(
 				replicas[i].Name)
 			return &status, nil
 		}
+
 		if shouldUpdateInPlaceReady(replicas[i]) {
 			klog.V(4).Infof(
 				"StatefulSet %s/%s update Pod %s InPlaceUpdateReady condition to true",
@@ -439,9 +457,8 @@ func (ssc *defaultStatefulSetControl) updateStatefulSet(
 				return &status, err
 			}
 		}
-		// If we have a Pod that has been created but is not running and ready we can not make progress.
-		// We must ensure that all for each Pod, when we create it, all of its predecessors, with respect to its
-		// ordinal, are Running and Ready.
+
+		// 索引位置pod还未ready且为顺序创建模式,那就等该pod状态ready后再创建后续Pod
 		if !isRunningAndReady(replicas[i]) && monotonic {
 			klog.V(4).Infof(
 				"StatefulSet %s/%s is waiting for Pod %s to be Running and Ready",
@@ -450,24 +467,32 @@ func (ssc *defaultStatefulSetControl) updateStatefulSet(
 				replicas[i].Name)
 			return &status, nil
 		}
-		// Enforce the StatefulSet invariants
+		// 检查pod的身份标识是否变化,没有变化说明Pod正常可以继续创建后续Pod
 		if identityMatches(set, replicas[i]) && storageMatches(set, replicas[i]) {
 			continue
 		}
 		// Make a deep copy so we don't mutate the shared cache
+		// 否则Pod身份变化就刷新该Pod
 		replica := replicas[i].DeepCopy()
 		if err := ssc.podControl.UpdateStatefulPod(updateSet, replica); err != nil {
 			return &status, err
 		}
 	}
 
+	// =========================== StatefulSet Pod 缩容相关 ==============================================
+	/*
+	扩容处理: Replicas增大的情况，则直接是Pod创建的逻辑。因为 StatefulSet会在每一个索引位置创建一个Pod，所以扩容就是多创建几个后续Pod。
+	缩容处理: 因为需要减少Pod，为了不和Pod创建过程冲突，缩容是从最大索引号开始删除Pod。
+	 */
 	// At this point, all of the current Replicas are Running and Ready, we can consider termination.
 	// We will wait for all predecessors to be Running and Ready prior to attempting a deletion.
 	// We will terminate Pods in a monotonically decreasing order over [len(pods),set.Spec.Replicas).
 	// Note that we do not resurrect Pods in this interval. Also not that scaling will take precedence over
 	// updates.
+
+	// 从最大索引号开始缩容
 	for target := len(condemned) - 1; target >= 0; target-- {
-		// wait for terminating pods to expire
+		// 如果该Pod正在被删除,则等待被删除完成即可
 		if isTerminating(condemned[target]) {
 			klog.V(4).Infof(
 				"StatefulSet %s/%s is waiting for Pod %s to Terminate prior to scale down",
@@ -480,7 +505,7 @@ func (ssc *defaultStatefulSetControl) updateStatefulSet(
 			}
 			continue
 		}
-		// if we are in monotonic mode and the condemned target is not the first unhealthy Pod block
+		// 如果被删除pod的前序pod中有不健康的,那么需要等待前序pod恢复为正常状态后才能继续缩容
 		if !isRunningAndReady(condemned[target]) && monotonic && condemned[target] != firstUnhealthyPod {
 			klog.V(4).Infof(
 				"StatefulSet %s/%s is waiting for Pod %s to be Running and Ready prior to scale down",
@@ -494,9 +519,11 @@ func (ssc *defaultStatefulSetControl) updateStatefulSet(
 			set.Name,
 			condemned[target].Name)
 
+		// 到这里可以执行pod缩容删除了
 		if err := ssc.podControl.DeleteStatefulPod(set, condemned[target]); err != nil {
 			return &status, err
 		}
+		// 更新StatefulSet.Status
 		if getPodRevision(condemned[target]) == currentRevision.Name {
 			status.CurrentReplicas--
 		}
@@ -508,11 +535,14 @@ func (ssc *defaultStatefulSetControl) updateStatefulSet(
 		}
 	}
 
+	// =========================== StatefulSet Pod 升级相关 ==============================================
 	// for the OnDelete strategy we short circuit. Pods will be updated when they are manually deleted.
+	// 当升级策略为OnDelete时，执行直接返回，等待用户手动删除pod
 	if set.Spec.UpdateStrategy.Type == apps.OnDeleteStatefulSetStrategyType {
 		return &status, nil
 	}
 
+	// 当升级策略为RollingUpdate模式，可以只升级部分Pod，新旧Pod分水岭的索引号由Spec.UpdateStrategy.RollingUpdate.Partition指定
 	// we compute the minimum ordinal of the target sequence for a destructive update based on the strategy.
 	updateMin := 0
 	maxUnavailable := 1
@@ -525,10 +555,11 @@ func (ssc *defaultStatefulSetControl) updateStatefulSet(
 	}
 	var unavailablePods []string
 	// we terminate the Pod with the largest ordinal that does not match the update revision.
+	// 从最大索引号开始执行Pod升级处理
 	for target := len(replicas) - 1; target >= updateMin; target-- {
-
 		isInPlaceUpdateCompleted := checkInPlaceUpdateCompleted(replicas[target])
 		// delete the Pod if it is not already terminating and does not match the update revision.
+		// 如果pod为旧版本并且不在被删除状态，则执行升级
 		if getPodRevision(replicas[target]) != updateRevision.Name && !isTerminating(replicas[target]) {
 			var skipUpdating bool
 			// First we use InPlaceUpdate if possible.

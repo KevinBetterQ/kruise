@@ -37,6 +37,14 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/openkruise/kruise/pkg/apis/apps/v1alpha1.InPlaceUpdateState":               schema_pkg_apis_apps_v1alpha1_InPlaceUpdateState(ref),
 		"github.com/openkruise/kruise/pkg/apis/apps/v1alpha1.JobCondition":                     schema_pkg_apis_apps_v1alpha1_JobCondition(ref),
 		"github.com/openkruise/kruise/pkg/apis/apps/v1alpha1.RollingUpdateStatefulSetStrategy": schema_pkg_apis_apps_v1alpha1_RollingUpdateStatefulSetStrategy(ref),
+		"github.com/openkruise/kruise/pkg/apis/apps/v1alpha1.RolloutControl":                   schema_pkg_apis_apps_v1alpha1_RolloutControl(ref),
+		"github.com/openkruise/kruise/pkg/apis/apps/v1alpha1.RolloutControlDefinition":         schema_pkg_apis_apps_v1alpha1_RolloutControlDefinition(ref),
+		"github.com/openkruise/kruise/pkg/apis/apps/v1alpha1.RolloutControlDefinitionList":     schema_pkg_apis_apps_v1alpha1_RolloutControlDefinitionList(ref),
+		"github.com/openkruise/kruise/pkg/apis/apps/v1alpha1.RolloutControlDefinitionSpec":     schema_pkg_apis_apps_v1alpha1_RolloutControlDefinitionSpec(ref),
+		"github.com/openkruise/kruise/pkg/apis/apps/v1alpha1.RolloutControlDefinitionStatus":   schema_pkg_apis_apps_v1alpha1_RolloutControlDefinitionStatus(ref),
+		"github.com/openkruise/kruise/pkg/apis/apps/v1alpha1.RolloutControlList":               schema_pkg_apis_apps_v1alpha1_RolloutControlList(ref),
+		"github.com/openkruise/kruise/pkg/apis/apps/v1alpha1.RolloutControlSpec":               schema_pkg_apis_apps_v1alpha1_RolloutControlSpec(ref),
+		"github.com/openkruise/kruise/pkg/apis/apps/v1alpha1.RolloutControlStatus":             schema_pkg_apis_apps_v1alpha1_RolloutControlStatus(ref),
 		"github.com/openkruise/kruise/pkg/apis/apps/v1alpha1.SidecarContainer":                 schema_pkg_apis_apps_v1alpha1_SidecarContainer(ref),
 		"github.com/openkruise/kruise/pkg/apis/apps/v1alpha1.SidecarSet":                       schema_pkg_apis_apps_v1alpha1_SidecarSet(ref),
 		"github.com/openkruise/kruise/pkg/apis/apps/v1alpha1.SidecarSetList":                   schema_pkg_apis_apps_v1alpha1_SidecarSetList(ref),
@@ -445,6 +453,232 @@ func schema_pkg_apis_apps_v1alpha1_RollingUpdateStatefulSetStrategy(ref common.R
 		},
 		Dependencies: []string{
 			"k8s.io/apimachinery/pkg/util/intstr.IntOrString"},
+	}
+}
+
+func schema_pkg_apis_apps_v1alpha1_RolloutControl(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "RolloutControl is the Schema for the rolloutcontrols API",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
+						},
+					},
+					"spec": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/openkruise/kruise/pkg/apis/apps/v1alpha1.RolloutControlSpec"),
+						},
+					},
+					"status": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/openkruise/kruise/pkg/apis/apps/v1alpha1.RolloutControlStatus"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/openkruise/kruise/pkg/apis/apps/v1alpha1.RolloutControlSpec", "github.com/openkruise/kruise/pkg/apis/apps/v1alpha1.RolloutControlStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+	}
+}
+
+func schema_pkg_apis_apps_v1alpha1_RolloutControlDefinition(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "RolloutControlDefinition is the Schema for the rolloutcontroldefinitions API",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"),
+						},
+					},
+					"spec": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/openkruise/kruise/pkg/apis/apps/v1alpha1.RolloutControlDefinitionSpec"),
+						},
+					},
+					"status": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("github.com/openkruise/kruise/pkg/apis/apps/v1alpha1.RolloutControlDefinitionStatus"),
+						},
+					},
+				},
+			},
+		},
+		Dependencies: []string{
+			"github.com/openkruise/kruise/pkg/apis/apps/v1alpha1.RolloutControlDefinitionSpec", "github.com/openkruise/kruise/pkg/apis/apps/v1alpha1.RolloutControlDefinitionStatus", "k8s.io/apimachinery/pkg/apis/meta/v1.ObjectMeta"},
+	}
+}
+
+func schema_pkg_apis_apps_v1alpha1_RolloutControlDefinitionList(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "RolloutControlDefinitionList contains a list of RolloutControlDefinition",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
+						},
+					},
+					"items": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/openkruise/kruise/pkg/apis/apps/v1alpha1.RolloutControlDefinition"),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"items"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/openkruise/kruise/pkg/apis/apps/v1alpha1.RolloutControlDefinition", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+	}
+}
+
+func schema_pkg_apis_apps_v1alpha1_RolloutControlDefinitionSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "RolloutControlDefinitionSpec defines the desired state of RolloutControlDefinition",
+				Type:        []string{"object"},
+			},
+		},
+	}
+}
+
+func schema_pkg_apis_apps_v1alpha1_RolloutControlDefinitionStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "RolloutControlDefinitionStatus defines the observed state of RolloutControlDefinition",
+				Type:        []string{"object"},
+			},
+		},
+	}
+}
+
+func schema_pkg_apis_apps_v1alpha1_RolloutControlList(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "RolloutControlList contains a list of RolloutControl",
+				Type:        []string{"object"},
+				Properties: map[string]spec.Schema{
+					"kind": {
+						SchemaProps: spec.SchemaProps{
+							Description: "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"apiVersion": {
+						SchemaProps: spec.SchemaProps{
+							Description: "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources",
+							Type:        []string{"string"},
+							Format:      "",
+						},
+					},
+					"metadata": {
+						SchemaProps: spec.SchemaProps{
+							Ref: ref("k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"),
+						},
+					},
+					"items": {
+						SchemaProps: spec.SchemaProps{
+							Type: []string{"array"},
+							Items: &spec.SchemaOrArray{
+								Schema: &spec.Schema{
+									SchemaProps: spec.SchemaProps{
+										Ref: ref("github.com/openkruise/kruise/pkg/apis/apps/v1alpha1.RolloutControl"),
+									},
+								},
+							},
+						},
+					},
+				},
+				Required: []string{"items"},
+			},
+		},
+		Dependencies: []string{
+			"github.com/openkruise/kruise/pkg/apis/apps/v1alpha1.RolloutControl", "k8s.io/apimachinery/pkg/apis/meta/v1.ListMeta"},
+	}
+}
+
+func schema_pkg_apis_apps_v1alpha1_RolloutControlSpec(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "RolloutControlSpec defines the desired state of RolloutControl",
+				Type:        []string{"object"},
+			},
+		},
+	}
+}
+
+func schema_pkg_apis_apps_v1alpha1_RolloutControlStatus(ref common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Description: "RolloutControlStatus defines the observed state of RolloutControl",
+				Type:        []string{"object"},
+			},
+		},
 	}
 }
 

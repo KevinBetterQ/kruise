@@ -237,6 +237,63 @@
         }
       }
     },
+    "kruise.apps.v1alpha1.RolloutDefinition": {
+      "description": "RolloutDefinition is the Schema for the rolloutdefinitions API",
+      "type": "object",
+      "properties": {
+        "apiVersion": {
+          "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources",
+          "type": "string"
+        },
+        "kind": {
+          "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
+          "type": "string"
+        },
+        "metadata": {
+          "$ref": "#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ObjectMeta"
+        },
+        "spec": {
+          "$ref": "#/definitions/kruise.apps.v1alpha1.RolloutDefinitionSpec"
+        },
+        "status": {
+          "$ref": "#/definitions/kruise.apps.v1alpha1.RolloutDefinitionStatus"
+        }
+      }
+    },
+    "kruise.apps.v1alpha1.RolloutDefinitionList": {
+      "description": "RolloutDefinitionList contains a list of RolloutDefinition",
+      "type": "object",
+      "required": [
+        "items"
+      ],
+      "properties": {
+        "apiVersion": {
+          "description": "APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources",
+          "type": "string"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/kruise.apps.v1alpha1.RolloutDefinition"
+          }
+        },
+        "kind": {
+          "description": "Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds",
+          "type": "string"
+        },
+        "metadata": {
+          "$ref": "#/definitions/io.k8s.apimachinery.pkg.apis.meta.v1.ListMeta"
+        }
+      }
+    },
+    "kruise.apps.v1alpha1.RolloutDefinitionSpec": {
+      "description": "RolloutDefinitionSpec defines the desired state of RolloutDefinition",
+      "type": "object"
+    },
+    "kruise.apps.v1alpha1.RolloutDefinitionStatus": {
+      "description": "RolloutDefinitionStatus defines the observed state of RolloutDefinition",
+      "type": "object"
+    },
     "kruise.apps.v1alpha1.SidecarContainer": {
       "description": "SidecarContainer defines the container of Sidecar",
       "type": "object",

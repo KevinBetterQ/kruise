@@ -1,0 +1,15 @@
+apiVersion: apps.kruise.io/v1alpha1
+kind: RolloutPlat
+metadata:
+  labels:
+    controller-tools.k8s.io: "1.0"
+  name: rolloutplat-sample
+spec:
+  resource: # 被控制的资源表示
+    kind: Deployment
+    namespace: default
+    name: app1
+  updateStrategy:
+    paused: "true"  # 控制暂停/继续发布的字段
+    partitions: 10  # 控制灰度批次的字段
+    maxUnavailable: 30%  #控制批次内最大并发的字段

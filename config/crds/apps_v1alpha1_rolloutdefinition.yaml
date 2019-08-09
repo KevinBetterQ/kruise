@@ -10,6 +10,8 @@ spec:
   names:
     kind: RolloutDefinition
     plural: rolloutdefinitions
+    shortNames:
+    - rd
   scope: Namespaced
   validation:
     openAPIV3Schema:
@@ -27,6 +29,56 @@ spec:
         metadata:
           type: object
         spec:
+          properties:
+            controlResource:
+              description: ControlResource indicates the controlled resource
+              properties:
+                apiVersion:
+                  description: APIVersion indicates the group and version
+                  type: string
+                resource:
+                  description: Resource indicates the kind of resource
+                  type: string
+              type: object
+            path:
+              description: Path indicates the path of resource to control
+              properties:
+                SpecPath:
+                  description: SpecPath indicates the spec path of resource to control
+                  properties:
+                    paused:
+                      description: Paused indicates the paused path of controlled workload
+                      type: string
+                    partition:
+                      description: Partition indicates the partition path of controlled workload.
+                      type: string
+                    maxUnavailable:
+                      description: MaxUnavailable indicates the maxUnavailable path of controlled workload.
+                      type: string
+                  type: object
+                StatusPath:
+                  description: Path indicates the status path of resource to control
+                  properties:
+                    observedGeneration:
+                      description: ObservedGeneration indicates the observedGeneration path of controlled workload
+                      type: string
+                    replicas:
+                      description: Replicas indicates the replicas path of controlled workload
+                      type: string
+                    readyReplicas:
+                      description: ReadyReplicas indicates the readyReplicas path of controlled workload
+                      type: string
+                    currentReplicas:
+                      description: CurrentReplicas indicates the currentReplicas path of controlled workload
+                      type: string
+                    updatedReplicas:
+                      description: UpdatedReplicas indicates the updatedReplicas path of controlled workload
+                      type: string
+                    conditions:
+                      description: Conditions indicates the state
+                      type: string
+                  type: object
+              type: object
           type: object
         status:
           type: object

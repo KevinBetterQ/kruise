@@ -20,19 +20,52 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
 // RolloutDefinitionSpec defines the desired state of RolloutDefinition
 type RolloutDefinitionSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+	ControlResource ControlResource `json:"controlResource"`
+	Path            Path            `json:"path,omitempty"`
 }
 
 // RolloutDefinitionStatus defines the observed state of RolloutDefinition
 type RolloutDefinitionStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
+}
+
+// ControlResource defines the controlled resource
+type ControlResource struct {
+	APIVersion string `json:"apiVersion"`
+	Resource   string `json:"resource"`
+}
+
+// Path indicates the path
+type Path struct {
+	SpecPath   SpecPath   `json:"specPath,omitempty"`
+	StatusPath StatusPath `json:"statusPath,omitempty"`
+}
+
+// SpecPath indicates the spec path
+type SpecPath struct {
+	// Paused indicates the paused path of controlled workload
+	Paused string `json:"paused,omitempty"`
+	// Partition indicates the partition path of controlled workload.
+	Partition string `json:"partition,omitempty"`
+	// MaxUnavailable indicates the maxUnavailable path of controlled workload.
+	MaxUnavailable string `json:"maxUnavailable,omitempty"`
+}
+
+// StatusPath indicates the status path
+type StatusPath struct {
+	// ObservedGeneration indicates the observedGeneration path of controlled workload
+	ObservedGeneration string `json:"observedGeneration,omitempty"`
+	// Replicas indicates the replicas path of controlled workload
+	Replicas string `json:"replicas"`
+	// ReadyReplicas indicates the readyReplicas path of controlled workload
+	ReadyReplicas string `json:"readyReplicas,omitempty"`
+	// CurrentReplicas indicates the currentReplicas path of controlled workload
+	CurrentReplicas string `json:"currentReplicas,omitempty"`
+	// UpdatedReplicas indicates the updatedReplicas path of controlled workload
+	UpdatedReplicas string `json:"updatedReplicas,omitempty"`
+	// Conditions indicates the state
+	Conditions string `json:"conditions,omitempty"`
 }
 
 // +genclient
@@ -45,7 +78,7 @@ type RolloutDefinition struct {
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
 	Spec   RolloutDefinitionSpec   `json:"spec,omitempty"`
-	Status RolloutDefinitionStatus `json:"status,omitempty"`
+	Status RolloutDefinitionStatus `json:"spec,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
